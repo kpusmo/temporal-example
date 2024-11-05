@@ -1,17 +1,30 @@
-import { MockActivityEnvironment } from '@temporalio/testing';
-import { describe, it } from 'mocha';
+import { MockActivityEnvironment, TestWorkflowEnvironment } from '@temporalio/testing';
+import { before, describe, it } from 'mocha';
 import * as activities from '../activities';
 import assert from 'assert';
 import sinon from 'sinon';
 import { SearchRule, SwPerson } from '../types';
 import axios from 'axios';
+import { Client } from '@temporalio/client';
 
 describe('activity', async () => {
+  let testEnv: TestWorkflowEnvironment;
+  let client: Client;
+
+  before(async () => {
+    testEnv = await TestWorkflowEnvironment.createLocal();
+    client = testEnv.client;
+  });
+
+  after(async () => {
+    await testEnv?.teardown();
+  });
+
   describe('greet', () => {
     it('successfully greets the user', async () => {
       const env = new MockActivityEnvironment();
       const name = 'Temporal';
-      const result = await env.run(activities.greet, name);
+      const result = await env.run(activities.createActivities(client).greet, name);
       assert.equal(result, 'Hello, Temporal!');
     });
   });
@@ -30,7 +43,7 @@ describe('activity', async () => {
         .resolves({ data: getSwApiResponse(1, null) });
 
       const env = new MockActivityEnvironment();
-      const result = await env.run(activities.fetchPeople, 'https://test.api/people');
+      const result = await env.run(activities.createActivities(client).fetchPeople, 'https://test.api/people');
 
       assert.deepStrictEqual(result, [getSwPerson(0), getSwPerson(1), getSwPerson(2), getSwPerson(3)]);
     });
@@ -81,7 +94,7 @@ describe('activity', async () => {
       ];
 
       const env = new MockActivityEnvironment();
-      const result = await env.run(activities.filterPeople, people, rules);
+      const result = await env.run(activities.createActivities(client).performFiltering, people, rules);
 
       assert.deepStrictEqual(result, people.slice(2));
     });

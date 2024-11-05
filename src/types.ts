@@ -1,3 +1,5 @@
+import { defineSignal } from '@temporalio/workflow';
+
 export interface SwPerson {
   // based on https://swapi.dev/documentation#people
   name: string;
@@ -27,3 +29,12 @@ export interface SearchRule<Entity> {
   operator: SearchOperator;
   value: SearchableTypes;
 }
+
+export interface GetPeopleRequest {
+  rules: SearchRule<SwPerson>[];
+  initiatorId: string;
+}
+
+export const getPeopleSignal = defineSignal<[GetPeopleRequest]>('get-people-signal');
+
+export const sendPeopleSignal = defineSignal<[SwPerson[]]>('send-people-signal');

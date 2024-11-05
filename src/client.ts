@@ -1,5 +1,5 @@
 import { Connection, Client } from '@temporalio/client';
-import { people } from './workflows';
+import { filterPeople } from './workflows';
 import { nanoid } from 'nanoid';
 
 async function run() {
@@ -16,7 +16,7 @@ async function run() {
     // namespace: 'foo.bar', // connects to 'default' namespace if not specified
   });
 
-  const handle = await client.workflow.start(people, {
+  const handle = await client.workflow.start(filterPeople, {
     taskQueue: 'sw',
     // the url and filtering rules could come from env or command
     args: ['https://swapi.dev/api', [
