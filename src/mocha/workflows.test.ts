@@ -1,7 +1,7 @@
 import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { before, describe, it } from 'mocha';
 import { Worker } from '@temporalio/worker';
-import { example, people } from '../workflows';
+import { example, filterPeople } from '../workflows';
 import * as activities from '../activities';
 import assert from 'assert';
 import sinon from 'sinon';
@@ -27,7 +27,7 @@ describe('workflow', () => {
         connection: nativeConnection,
         taskQueue,
         workflowsPath: require.resolve('../workflows'),
-        activities,
+        activities: activities.createActivities(client),
       });
 
       const result = await worker.runUntil(
@@ -41,7 +41,7 @@ describe('workflow', () => {
     });
   });
 
-  describe('people', () => {
+  describe('filterPeople', () => {
     let testEnv: TestWorkflowEnvironment;
 
     before(async () => {
@@ -66,11 +66,11 @@ describe('workflow', () => {
         connection: nativeConnection,
         taskQueue,
         workflowsPath: require.resolve('../workflows'),
-        activities,
+        activities: activities.createActivities(client),
       });
 
       const result = await worker.runUntil(
-        client.workflow.execute(people, {
+        client.workflow.execute(filterPeople, {
           args: [
             'https://test.api',
             [

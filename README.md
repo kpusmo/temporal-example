@@ -2,12 +2,25 @@
 
 This project presents a simple workflow utilizing [Temproal](https://docs.temporal.io/workflows#workflow-execution).
 It is built based on [Hello World Tutorial](https://learn.temporal.io/getting_started/typescript/hello_world_in_typescript/).
-Hello world code is kept in the project, on top of it a new workflow `people` is added, which uses two newly created activities.
+Hello world code is kept in the project, on top of it new workflows `getPeople` and `filterPeople` are added, which use newly created activities.
 
-## People workflow
+## Filter people workflow
 
-People workflow fetches all people from [SW API](https://swapi.dev/), then filters this list based on the filtering rules
-provided to workflow (hard coded in `client.ts`).
+Filter people workflow fetches all people from [SW API](https://swapi.dev/), then filters this list based on the filtering rules
+provided to workflow (hard coded in `client.ts`). For fetching, it uses a child workflow, `getPeople`, of which a single
+instance is spawned and then runs infinitely. This way, the data from the external API is only fetched once.
+
+It is assumed that the data returned from SW API does not change. If we'd expect it changes, we could modify get people 
+workflow so it fetches data e.g. once per day.
+
+Reusing once fetched data speeds up consecutive executions of the `filterPeople` workflow, which can be observed
+in logs, e.g.
+
+```bash
+[filterPeople(workflow-9gAH8H10MzdU9wXve8AGl)] elapsed time 3078
+[filterPeople(workflow-moYdIzXsw-Etgyl5DXmAa)] elapsed time 1022
+[filterPeople(workflow-6ivSDMkxdAfDNcYWA9E2H)] elapsed time 1024
+```
 
 ## Filters
 
