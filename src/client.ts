@@ -1,5 +1,5 @@
 import { Connection, Client } from '@temporalio/client';
-import { example } from './workflows';
+import { people } from './workflows';
 import { nanoid } from 'nanoid';
 
 async function run() {
@@ -16,17 +16,28 @@ async function run() {
     // namespace: 'foo.bar', // connects to 'default' namespace if not specified
   });
 
-  const handle = await client.workflow.start(example, {
-    taskQueue: 'hello-world',
-    // type inference works! args: [name: string]
-    args: ['Temporal'],
+  const handle = await client.workflow.start(people, {
+    taskQueue: 'sw',
+    // the url and filtering rules could come from env or command
+    args: ['https://swapi.dev/api', [
+      {
+        propertyName: 'name',
+        operator: 'matches_regex',
+        value: '\\d',
+      },
+      {
+        propertyName: 'eye_color',
+        operator: 'equals',
+        value: 'red',
+      },
+    ]],
     // in practice, use a meaningful business ID, like customerId or transactionId
     workflowId: 'workflow-' + nanoid(),
   });
   console.log(`Started workflow ${handle.workflowId}`);
 
   // optional: wait for client result
-  console.log(await handle.result()); // Hello, Temporal!
+  console.log(await handle.result());
 }
 
 run().catch((err) => {
