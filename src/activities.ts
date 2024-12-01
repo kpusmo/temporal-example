@@ -1,7 +1,8 @@
-import { GetPeopleRequest, getPeopleSignal, SearchRule, SwPerson } from './types';
+import { GetPeopleRequest, getPeopleSignal, SearchRule, SearchRules, SwPerson } from './types';
 import axios, { AxiosResponse } from 'axios';
 import { ApplicationFailure, Client } from '@temporalio/client';
 import { activityInfo } from '@temporalio/activity';
+import { Rule } from 'eslint';
 
 interface SwResponse {
   count: number;
@@ -31,23 +32,17 @@ export function createActivities(client: Client) {
       return results;
     },
 
-    async performFiltering(people: SwPerson[], rules: SearchRule<SwPerson>[]): Promise<SwPerson[]> {
-      return rules.reduce(
-        (filteredPeople, rule) =>
-          filteredPeople.filter((person) => {
-            switch (rule.operator) {
-              case 'equals':
-                return person[rule.propertyName] === rule.value;
-              case 'matches_regex':
-                validateRegexRule(rule, person);
-                return new RegExp(rule.value as string).test(person[rule.propertyName] as string);
-            }
-          }),
-        people
-      );
+    async performFiltering(people: SwPerson[], rules: SearchRules<SwPerson>): Promise<SwPerson[]> {
+      if (rules.condition === 'AND') {
+        return filterWithAnd(people, rules.rules);
+      }
+      if (rules.condition === 'OR') {
+        return filterWithOr(people, rules.rules);
+      }
+      return [];
     },
 
-    async fetchAndFilterPeople(swApiUrl: string, rules: SearchRule<SwPerson>[]): Promise<void> {
+    async fetchAndFilterPeople(swApiUrl: string, rules: SearchRules<SwPerson>): Promise<void> {
       const request: GetPeopleRequest = {
         rules,
         initiatorId: activityInfo().workflowExecution.workflowId,
@@ -61,6 +56,36 @@ export function createActivities(client: Client) {
       });
     },
   };
+}
+
+function filterWithAnd(people: SwPerson[], rules: SearchRule<SwPerson>[]): SwPerson[] {
+  return rules.reduce(
+    (filteredPeople, rule) =>
+      filteredPeople.filter(applyRule(rule)),
+    people
+  );
+}
+
+function filterWithOr(people: SwPerson[], rules: SearchRule<SwPerson>[]): SwPerson[] {
+  return rules.reduce(
+    (filteredPeople, rule) => {
+      return [
+        ...filteredPeople,
+        ...people.filter(applyRule(rule)),
+      ]
+    },
+    [] as SwPerson[],
+  )
+}
+
+const applyRule = (rule: SearchRule<SwPerson>) => (person: SwPerson): boolean => {
+  switch (rule.operator) {
+    case 'equals':
+      return person[rule.propertyName] === rule.value;
+    case 'matches_regex':
+      validateRegexRule(rule, person);
+      return new RegExp(rule.value as string).test(person[rule.propertyName] as string);
+  }
 }
 
 function validateRegexRule<Entity>(rule: SearchRule<Entity>, entity: Entity): void {
