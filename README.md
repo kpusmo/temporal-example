@@ -24,11 +24,12 @@ in logs, e.g.
 
 ## Filters
 
-You can provide multiple filters, which are combined using `AND` or `OR` operator. Provided filters must meet the `SearchRules` interface:
+You can provide multiple filters, which are combined using `AND` or `OR` operator. Filters can be nested.
+Provided filters must meet the `Filter` interface:
 ```ts
-export interface SearchRules<Entity> {
+export interface Filter<Entity> {
   condition: Condition;
-  rules: SearchRule<Entity>[];
+  rules: SearchRule<Entity>[] | Filter<Entity>[];
 }
 
 export interface SearchRule<Entity> {
@@ -58,71 +59,35 @@ implementation in `activities.ts`. Similarly, `SearchableTypes` (currently `stri
 1. `npm run start.watch` to start the Worker.
 1. In another shell, `npm run workflow` to run the Workflow Client.
 
-The Workflow should return list of people matching filters
-(number in `name`, red `eye_color` - you can play with filters in `client.ts`):
+The Workflow should return list of people matching filters:
+- number in `name` or red `eye_color`, AND
+- name containing `x` or `y`.
 
-```bash
+You can play with filters in `client.ts`.
+
+```ts
 [
   {
-    name: 'R2-D2',
-    height: '96',
-    mass: '32',
-    hair_color: 'n/a',
-    skin_color: 'white, blue',
+    name: 'Nute Gunray',
+    height: '191',
+    mass: '90',
+    hair_color: 'none',
+    skin_color: 'mottled green',
     eye_color: 'red',
-    birth_year: '33BBY',
-    gender: 'n/a',
-    homeworld: 'https://swapi.dev/api/planets/8/',
+    birth_year: 'unknown',
+    gender: 'male',
+    homeworld: 'https://swapi.dev/api/planets/18/',
     films: [
-      'https://swapi.dev/api/films/1/',
-      'https://swapi.dev/api/films/2/',
-      'https://swapi.dev/api/films/3/',
       'https://swapi.dev/api/films/4/',
       'https://swapi.dev/api/films/5/',
       'https://swapi.dev/api/films/6/'
     ],
-    species: [ 'https://swapi.dev/api/species/2/' ],
+    species: [ 'https://swapi.dev/api/species/11/' ],
     vehicles: [],
     starships: [],
-    created: '2014-12-10T15:11:50.376000Z',
-    edited: '2014-12-20T21:17:50.311000Z',
-    url: 'https://swapi.dev/api/people/3/'
-  },
-  {
-    name: 'R5-D4',
-    height: '97',
-    mass: '32',
-    hair_color: 'n/a',
-    skin_color: 'white, red',
-    eye_color: 'red',
-    birth_year: 'unknown',
-    gender: 'n/a',
-    homeworld: 'https://swapi.dev/api/planets/1/',
-    films: [ 'https://swapi.dev/api/films/1/' ],
-    species: [ 'https://swapi.dev/api/species/2/' ],
-    vehicles: [],
-    starships: [],
-    created: '2014-12-10T15:57:50.959000Z',
-    edited: '2014-12-20T21:17:50.321000Z',
-    url: 'https://swapi.dev/api/people/8/'
-  },
-  {
-    name: 'IG-88',
-    height: '200',
-    mass: '140',
-    hair_color: 'none',
-    skin_color: 'metal',
-    eye_color: 'red',
-    birth_year: '15BBY',
-    gender: 'none',
-    homeworld: 'https://swapi.dev/api/planets/28/',
-    films: [ 'https://swapi.dev/api/films/2/' ],
-    species: [ 'https://swapi.dev/api/species/2/' ],
-    vehicles: [],
-    starships: [],
-    created: '2014-12-15T12:51:10.076000Z',
-    edited: '2014-12-20T21:17:50.351000Z',
-    url: 'https://swapi.dev/api/people/23/'
+    created: '2014-12-19T17:05:57.357000Z',
+    edited: '2014-12-20T21:17:50.377000Z',
+    url: 'https://swapi.dev/api/people/33/'
   }
 ]
 ```

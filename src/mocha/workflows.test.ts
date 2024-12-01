@@ -73,18 +73,21 @@ describe('workflow', () => {
         client.workflow.execute(filterPeople, {
           args: [
             'https://test.api',
-            [
-              {
-                propertyName: 'name',
-                operator: 'matches_regex',
-                value: '\\d',
-              },
-              {
-                propertyName: 'eye_color',
-                operator: 'equals',
-                value: 'red',
-              },
-            ],
+            {
+              condition: 'AND',
+              rules: [
+                {
+                  propertyName: 'name',
+                  operator: 'matches_regex',
+                  value: '\\d',
+                },
+                {
+                  propertyName: 'eye_color',
+                  operator: 'equals',
+                  value: 'red',
+                },
+              ],
+            },
           ],
           workflowId: 'test',
           taskQueue,

@@ -12,7 +12,7 @@ async function run() {
   // }
 
   const client = new Client({
-    connection,
+    connection
     // namespace: 'foo.bar', // connects to 'default' namespace if not specified
   });
 
@@ -20,22 +20,42 @@ async function run() {
     taskQueue: 'sw',
     // the url and filtering rules could come from env or command
     args: ['https://swapi.dev/api', {
-      condition: 'OR',
+      condition: 'AND',
       rules: [
         {
-          propertyName: 'name',
-          operator: 'matches_regex',
-          value: '\\d',
+          condition: 'OR',
+          rules: [
+            {
+              propertyName: 'name',
+              operator: 'matches_regex',
+              value: '\\d'
+            },
+            {
+              propertyName: 'eye_color',
+              operator: 'equals',
+              value: 'red'
+            }
+          ]
         },
         {
-          propertyName: 'eye_color',
-          operator: 'equals',
-          value: 'red',
+          condition: 'OR',
+          rules: [
+            {
+              propertyName: 'name',
+              operator: 'matches_regex',
+              value: 'x'
+            },
+            {
+              propertyName: 'name',
+              operator: 'matches_regex',
+              value: 'y'
+            },
+          ]
         },
       ]
     }],
     // in practice, use a meaningful business ID, like customerId or transactionId
-    workflowId: 'workflow-' + nanoid(),
+    workflowId: 'workflow-' + nanoid()
   });
   console.log(`Started workflow ${handle.workflowId}`);
 
