@@ -1,4 +1,4 @@
-import { GetPeopleRequest, getPeopleSignal, SearchRule, SearchRules, SwPerson } from './types';
+import { GetPeopleRequest, getPeopleSignal, SearchRule, Filter, SwPerson } from './types';
 import axios, { AxiosResponse } from 'axios';
 import { ApplicationFailure, Client } from '@temporalio/client';
 import { activityInfo } from '@temporalio/activity';
@@ -32,19 +32,29 @@ export function createActivities(client: Client) {
       return results;
     },
 
-    async performFiltering(people: SwPerson[], rules: SearchRules<SwPerson>): Promise<SwPerson[]> {
-      if (rules.condition === 'AND') {
-        return filterWithAnd(people, rules.rules);
+    performFiltering: async function performFiltering(people: SwPerson[], filters: Filter<SwPerson>): Promise<SwPerson[]> {
+      if (isNestedFilter(filters.rules)) {
+        const filteredSets = await Promise.all(filters.rules.map(
+          async (nestedFilter) => new Set(await performFiltering(people, nestedFilter)))
+        );
+        const resultSet = filteredSets.reduce(
+          (acc, chunk) =>
+            acc[filters.condition === 'AND' ? 'intersection' : 'union'](new Set(chunk)),
+        );
+        return Array.from(resultSet);
       }
-      if (rules.condition === 'OR') {
-        return filterWithOr(people, rules.rules);
+      if (filters.condition === 'AND') {
+        return filterWithAnd(people, filters.rules);
+      }
+      if (filters.condition === 'OR') {
+        return filterWithOr(people, filters.rules);
       }
       return [];
     },
 
-    async fetchAndFilterPeople(swApiUrl: string, rules: SearchRules<SwPerson>): Promise<void> {
+    async fetchAndFilterPeople(swApiUrl: string, filters: Filter<SwPerson>): Promise<void> {
       const request: GetPeopleRequest = {
-        rules,
+        filters,
         initiatorId: activityInfo().workflowExecution.workflowId,
       };
       await client.workflow.signalWithStart('getPeople', {
@@ -94,4 +104,8 @@ function validateRegexRule<Entity>(rule: SearchRule<Entity>, entity: Entity): vo
     console.error('invalid rule', rule, entity[rule.propertyName]);
     throw new ApplicationFailure('Invalid filtering rule', null, true, [rule, entity[rule.propertyName]]);
   }
+}
+
+function isNestedFilter<Entity>(rules: Filter<Entity>['rules']): rules is Filter<Entity>[] {
+  return rules.length > 0 && (rules[0] as Filter<Entity>).condition !== undefined;
 }

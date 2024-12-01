@@ -3,7 +3,7 @@ import { before, describe, it } from 'mocha';
 import * as activities from '../activities';
 import assert from 'assert';
 import sinon from 'sinon';
-import { SearchRule, SwPerson } from '../types';
+import { Filter, SwPerson } from '../types';
 import axios from 'axios';
 import { Client } from '@temporalio/client';
 
@@ -61,7 +61,7 @@ describe('activity', async () => {
       sinon.restore();
     });
 
-    it('filters input based on provided rules', async () => {
+    it('filters input based on provided AND filter', async () => {
       const people = [
         getSwPerson({
           name: 'filtered out 1',
@@ -80,23 +80,141 @@ describe('activity', async () => {
           eye_color: 'red',
         }),
       ];
-      const rules: SearchRule<SwPerson>[] = [
-        {
-          propertyName: 'name',
-          operator: 'matches_regex',
-          value: '\\d',
-        },
-        {
-          propertyName: 'eye_color',
-          operator: 'equals',
-          value: 'red',
-        },
-      ];
+      const rules: Filter<SwPerson> = {
+        condition: 'AND',
+        rules: [
+          {
+            propertyName: 'name',
+            operator: 'matches_regex',
+            value: '\\d',
+          },
+          {
+            propertyName: 'eye_color',
+            operator: 'equals',
+            value: 'red',
+          },
+        ],
+      };
 
       const env = new MockActivityEnvironment();
       const result = await env.run(activities.createActivities(client).performFiltering, people, rules);
 
       assert.deepStrictEqual(result, people.slice(2));
+    });
+
+    it('filters input based on provided OR filter', async () => {
+      const people = [
+        getSwPerson({
+          name: 'matching 1',
+          eye_color: 'blue',
+        }),
+        getSwPerson({
+          name: 'filtered out',
+          eye_color: 'blue',
+        }),
+        getSwPerson({
+          name: 'matching two',
+          eye_color: 'red',
+        }),
+        getSwPerson({
+          name: 'matching three',
+          eye_color: 'red',
+        }),
+      ];
+      const rules: Filter<SwPerson> = {
+        condition: 'OR',
+        rules: [
+          {
+            propertyName: 'name',
+            operator: 'matches_regex',
+            value: '\\d',
+          },
+          {
+            propertyName: 'eye_color',
+            operator: 'equals',
+            value: 'red',
+          },
+        ],
+      };
+
+      const env = new MockActivityEnvironment();
+      const result = await env.run(activities.createActivities(client).performFiltering, people, rules);
+
+      assert.deepStrictEqual(result, [people[0], ...people.slice(2)]);
+    });
+
+    it('filters input based on provided nested filters', async () => {
+      const people = [
+        getSwPerson({
+          name: 'filtered out 1',
+          eye_color: 'blue',
+        }),
+        getSwPerson({
+          name: 'filtered out',
+          eye_color: 'red',
+        }),
+        getSwPerson({
+          name: 'matching 1',
+          eye_color: 'red',
+        }),
+        getSwPerson({
+          name: 'matching 2',
+          eye_color: 'red',
+        }),
+        getSwPerson({
+          name: 'matchingx',
+          eye_color: 'green',
+        }),
+        getSwPerson({
+          name: 'yyyy matching',
+          eye_color: 'green',
+        }),
+        getSwPerson({
+          name: 'matchix',
+          eye_color: 'red',
+        }),
+      ];
+      const rules: Filter<SwPerson> = {
+        condition: 'OR',
+        rules: [
+          {
+            condition: 'AND',
+            rules: [
+              {
+                propertyName: 'name',
+                operator: 'matches_regex',
+                value: '\\d',
+              },
+              {
+                propertyName: 'eye_color',
+                operator: 'equals',
+                value: 'red',
+              },
+            ],
+          },
+          {
+            condition: 'OR',
+            rules: [
+              {
+                propertyName: 'name',
+                operator: 'matches_regex',
+                value: 'x',
+              },
+              {
+                propertyName: 'name',
+                operator: 'matches_regex',
+                value: 'y',
+              },
+            ],
+          },
+        ],
+      };
+
+      const env = new MockActivityEnvironment();
+      const result = (await env.run(activities.createActivities(client).performFiltering, people, rules)) as SwPerson[];
+
+      const sorter = (a: SwPerson, b: SwPerson) => a.name.localeCompare(b.name);
+      assert.deepStrictEqual(result.toSorted(sorter), people.slice(2).toSorted(sorter));
     });
   });
 

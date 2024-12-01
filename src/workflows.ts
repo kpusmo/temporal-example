@@ -8,7 +8,7 @@ import {
 } from '@temporalio/workflow';
 // Only import the activity types
 import type * as activities from './activities';
-import { getPeopleSignal, SearchRule, SearchRules, sendPeopleSignal, SwPerson } from './types';
+import { getPeopleSignal, SearchRule, Filter, sendPeopleSignal, SwPerson } from './types';
 
 const { greet, fetchPeople, fetchAndFilterPeople, performFiltering } = proxyActivities<
   ReturnType<(typeof activities)['createActivities']>
@@ -26,8 +26,8 @@ export async function getPeople(swApiUrl: string, carriedPeople?: SwPerson[]): P
   // if we expected data to mutate, we could fetch it e.g. once per day in a while loop below (with sleep adequately modified)
   const allPeople = carriedPeople ?? (await fetchPeople(swApiUrl));
 
-  setHandler(getPeopleSignal, async ({ rules, initiatorId }) => {
-    const filteredPeople = await performFiltering(allPeople, rules);
+  setHandler(getPeopleSignal, async ({ filters, initiatorId }) => {
+    const filteredPeople = await performFiltering(allPeople, filters);
     const workflowInitiatingSignal = getExternalWorkflowHandle(initiatorId);
     await workflowInitiatingSignal.signal(sendPeopleSignal, filteredPeople);
   });
@@ -40,7 +40,7 @@ export async function getPeople(swApiUrl: string, carriedPeople?: SwPerson[]): P
   await continueAsNew(swApiUrl, allPeople);
 }
 
-export async function filterPeople(swApiUrl: string, rules: SearchRules<SwPerson>): Promise<SwPerson[]> {
+export async function filterPeople(swApiUrl: string, rules: Filter<SwPerson>): Promise<SwPerson[]> {
   const start = new Date();
 
   let results: SwPerson[] | undefined = undefined;
