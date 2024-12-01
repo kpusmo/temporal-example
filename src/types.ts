@@ -30,8 +30,15 @@ export interface SearchRule<Entity> {
   value: SearchableTypes;
 }
 
+export interface SearchRules<Entity> {
+  condition: Condition;
+  rules: SearchRule<Entity>[];
+}
+
+export type Condition = 'OR' | 'AND';
+
 export interface GetPeopleRequest {
-  rules: SearchRule<SwPerson>[];
+  rules: SearchRules<SwPerson>;
   initiatorId: string;
 }
 

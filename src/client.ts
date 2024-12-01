@@ -19,18 +19,21 @@ async function run() {
   const handle = await client.workflow.start(filterPeople, {
     taskQueue: 'sw',
     // the url and filtering rules could come from env or command
-    args: ['https://swapi.dev/api', [
-      {
-        propertyName: 'name',
-        operator: 'matches_regex',
-        value: '\\d',
-      },
-      {
-        propertyName: 'eye_color',
-        operator: 'equals',
-        value: 'red',
-      },
-    ]],
+    args: ['https://swapi.dev/api', {
+      condition: 'OR',
+      rules: [
+        {
+          propertyName: 'name',
+          operator: 'matches_regex',
+          value: '\\d',
+        },
+        {
+          propertyName: 'eye_color',
+          operator: 'equals',
+          value: 'red',
+        },
+      ]
+    }],
     // in practice, use a meaningful business ID, like customerId or transactionId
     workflowId: 'workflow-' + nanoid(),
   });

@@ -8,7 +8,7 @@ import {
 } from '@temporalio/workflow';
 // Only import the activity types
 import type * as activities from './activities';
-import { getPeopleSignal, SearchRule, sendPeopleSignal, SwPerson } from './types';
+import { getPeopleSignal, SearchRule, SearchRules, sendPeopleSignal, SwPerson } from './types';
 
 const { greet, fetchPeople, fetchAndFilterPeople, performFiltering } = proxyActivities<
   ReturnType<(typeof activities)['createActivities']>
@@ -40,7 +40,7 @@ export async function getPeople(swApiUrl: string, carriedPeople?: SwPerson[]): P
   await continueAsNew(swApiUrl, allPeople);
 }
 
-export async function filterPeople(swApiUrl: string, rules: SearchRule<SwPerson>[]): Promise<SwPerson[]> {
+export async function filterPeople(swApiUrl: string, rules: SearchRules<SwPerson>): Promise<SwPerson[]> {
   const start = new Date();
 
   let results: SwPerson[] | undefined = undefined;

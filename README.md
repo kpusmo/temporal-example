@@ -24,8 +24,13 @@ in logs, e.g.
 
 ## Filters
 
-Filter rule meets the interface:
+You can provide multiple filters, which are combined using `AND` or `OR` operator. Provided filters must meet the `SearchRules` interface:
 ```ts
+export interface SearchRules<Entity> {
+  condition: Condition;
+  rules: SearchRule<Entity>[];
+}
+
 export interface SearchRule<Entity> {
   propertyName: keyof Entity;
   operator: 'equals' | 'matches_regex';
